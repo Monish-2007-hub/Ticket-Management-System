@@ -19,7 +19,14 @@ This is the backend API for the project, built with Node.js, Express, and MySQL.
     npm install
     ```
 
-3.  **Start the Server**:
+3.  **Seed Initial Admin (Optional)**:
+    If your `USERS` table is empty, run this to create an `admin` account:
+    ```bash
+    npm run seed
+    ```
+    Default login: `admin` / `admin`.
+
+4.  **Start the Server**:
     ```bash
     npm start
     ```
