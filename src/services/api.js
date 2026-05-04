@@ -1,41 +1,47 @@
-// Mock API Service using localStorage
+import axios from 'axios';
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const API_BASE_URL = 'http://localhost:5000/api';
 
-const getStorageItem = (key, defaultVal) => {
-  const item = localStorage.getItem(key);
-  return item ? JSON.parse(item) : defaultVal;
-};
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-const setStorageItem = (key, val) => {
-  localStorage.setItem(key, JSON.stringify(val));
-};
+// Request interceptor to add the JWT token to headers
+api.interceptors.request.use(
+  (config) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.token) {
+      config.headers['Authorization'] = `Bearer ${user.token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
-// Initialize mock data if empty
-if (!localStorage.getItem('passengers')) {
-  setStorageItem('passengers', [
-    { passenger_id: 'P001', first_name: 'John', last_name: 'Doe', date_of_birth: '1990-05-15', passenger_type: 'Regular' },
-    { passenger_id: 'P002', first_name: 'Jane', last_name: 'Smith', date_of_birth: '1995-10-22', passenger_type: 'Student' }
-  ]);
-  setStorageItem('tickets', []);
-  setStorageItem('routes', [
-    { route_id: 'R001', route_name: 'Downtown Express', start_point: 'Central Station', end_point: 'Business Park' }
-  ]);
-  setStorageItem('buses', [
-    { bus_id: 'B001', route_id: 'R001', capacity: 40, status: 'Active' }
-  ]);
-  setStorageItem('passes', []);
-}
+// Response interceptor to handle unauthorized access
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const authService = {
   login: async (username, password) => {
-    await delay(800);
-    if (username === 'admin' && password === 'admin') {
-      const user = { username: 'admin', role: 'admin', token: 'mock-jwt-token' };
-      localStorage.setItem('user', JSON.stringify(user));
-      return { data: user };
+    const response = await api.post('/auth/login', { username, password });
+    if (response.data.success) {
+      localStorage.setItem('user', JSON.stringify(response.data.data));
     }
-    throw new Error('Invalid credentials');
+    return response.data;
   },
   logout: () => {
     localStorage.removeItem('user');
@@ -50,93 +56,85 @@ export const authService = {
 
 export const dashboardService = {
   getStats: async () => {
-    await delay(500);
-    const passengers = getStorageItem('passengers', []);
-    const tickets = getStorageItem('tickets', []);
-    const routes = getStorageItem('routes', []);
-    const passes = getStorageItem('passes', []);
-    
-    return {
-      data: {
-        totalPassengers: passengers.length,
-        totalTickets: tickets.length,
-        totalRoutes: routes.length,
-        totalPasses: passes.length,
-      }
-    };
+    const response = await api.get('/dashboard');
+    return response.data;
   }
 };
 
 export const passengerService = {
   getAll: async () => {
-    await delay(500);
-    return { data: getStorageItem('passengers', []) };
+    const response = await api.get('/passengers');
+    return response.data;
   },
   add: async (passenger) => {
-    await delay(500);
-    const passengers = getStorageItem('passengers', []);
-    const newPassenger = { ...passenger, passenger_id: `P${String(passengers.length + 1).padStart(3, '0')}` };
-    passengers.push(newPassenger);
-    setStorageItem('passengers', passengers);
-    return { data: newPassenger };
+    const response = await api.post('/passengers', passenger);
+    return response.data;
+  },
+  update: async (id, passenger) => {
+    const response = await api.put(`/passengers/${id}`, passenger);
+    return response.data;
   },
   delete: async (id) => {
-    await delay(500);
-    let passengers = getStorageItem('passengers', []);
-    passengers = passengers.filter(p => p.passenger_id !== id);
-    setStorageItem('passengers', passengers);
-    return { data: { success: true } };
+    const response = await api.delete(`/passengers/${id}`);
+    return response.data;
   }
 };
 
 export const ticketService = {
   getAll: async () => {
-    await delay(500);
-    return { data: getStorageItem('tickets', []) };
+    const response = await api.get('/tickets');
+    return response.data;
   },
-  book: async (ticket) => {
-    await delay(500);
-    const tickets = getStorageItem('tickets', []);
-    const newTicket = { ...ticket, ticket_id: `T${String(Date.now()).slice(-6)}` };
-    tickets.push(newTicket);
-    setStorageItem('tickets', tickets);
-    return { data: newTicket };
+  getById: async (id) => {
+    const response = await api.get(`/tickets/${id}`);
+    return response.data;
+  },
+  book: async (ticketData) => {
+    const response = await api.post('/tickets', ticketData);
+    return response.data;
   }
 };
 
 export const routeService = {
   getAll: async () => {
-    await delay(500);
-    return { data: getStorageItem('routes', []) };
+    const response = await api.get('/routes');
+    return response.data;
   },
   add: async (route) => {
-    await delay(500);
-    const routes = getStorageItem('routes', []);
-    const newRoute = { ...route, route_id: `R${String(routes.length + 1).padStart(3, '0')}` };
-    routes.push(newRoute);
-    setStorageItem('routes', routes);
-    return { data: newRoute };
+    const response = await api.post('/routes', route);
+    return response.data;
   }
 };
 
 export const busService = {
   getAll: async () => {
-    await delay(500);
-    return { data: getStorageItem('buses', []) };
+    const response = await api.get('/bus');
+    return response.data;
+  },
+  add: async (bus) => {
+    const response = await api.post('/bus', bus);
+    return response.data;
+  }
+};
+
+export const seatService = {
+  getByBusId: async (busId) => {
+    const response = await api.get(`/seats/${busId}`);
+    return response.data;
+  },
+  book: async (busId, seatNumber) => {
+    const response = await api.put('/seats/book', { bus_id: busId, seat_number: seatNumber });
+    return response.data;
   }
 };
 
 export const passService = {
   getAll: async () => {
-    await delay(500);
-    return { data: getStorageItem('passes', []) };
+    const response = await api.get('/pass');
+    return response.data;
   },
-  issue: async (pass) => {
-    await delay(500);
-    const passes = getStorageItem('passes', []);
-    const newPass = { ...pass, pass_id: `BP${String(Date.now()).slice(-6)}` };
-    passes.push(newPass);
-    setStorageItem('passes', passes);
-    return { data: newPass };
+  issue: async (passData) => {
+    const response = await api.post('/pass', passData);
+    return response.data;
   }
 };

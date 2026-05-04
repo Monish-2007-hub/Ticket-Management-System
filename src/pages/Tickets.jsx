@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ticketService, passengerService, routeService } from '../services/api';
+import { ticketService, passengerService, routeService, busService } from '../services/api';
 import { Plus, Ticket as TicketIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -7,11 +7,14 @@ const Tickets = () => {
   const [tickets, setTickets] = useState([]);
   const [passengers, setPassengers] = useState([]);
   const [routes, setRoutes] = useState([]);
+  const [buses, setBuses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     passenger_id: '',
     route_id: '',
+    bus_id: '',
+    seat_number: '',
     travel_date: '',
     fare: ''
   });
@@ -19,14 +22,16 @@ const Tickets = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [tRes, pRes, rRes] = await Promise.all([
+      const [tRes, pRes, rRes, bRes] = await Promise.all([
         ticketService.getAll(),
         passengerService.getAll(),
-        routeService.getAll()
+        routeService.getAll(),
+        busService.getAll()
       ]);
-      setTickets(tRes.data);
-      setPassengers(pRes.data);
-      setRoutes(rRes.data);
+      setTickets(tRes.data || []);
+      setPassengers(pRes.data || []);
+      setRoutes(rRes.data || []);
+      setBuses(bRes.data || []);
     } catch (error) {
       toast.error('Failed to load data');
     } finally {
@@ -41,13 +46,17 @@ const Tickets = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await ticketService.book(formData);
-      toast.success('Ticket booked successfully');
-      setShowModal(false);
-      setFormData({ passenger_id: '', route_id: '', travel_date: '', fare: '' });
-      fetchData();
+      const response = await ticketService.book(formData);
+      if (response.success) {
+        toast.success('Ticket booked successfully');
+        setShowModal(false);
+        setFormData({ passenger_id: '', route_id: '', bus_id: '', seat_number: '', travel_date: '', fare: '' });
+        fetchData();
+      } else {
+        toast.error(response.message || 'Failed to book ticket');
+      }
     } catch (error) {
-      toast.error('Failed to book ticket');
+      toast.error(error.response?.data?.message || 'Failed to book ticket');
     }
   };
 
@@ -98,7 +107,7 @@ const Tickets = () => {
                         </td>
                         <td className="px-6 py-4">{passenger ? `${passenger.first_name} ${passenger.last_name}` : t.passenger_id}</td>
                         <td className="px-6 py-4">{route ? route.route_name : t.route_id}</td>
-                        <td className="px-6 py-4">{t.travel_date}</td>
+                        <td className="px-6 py-4">{new Date(t.travel_date).toLocaleDateString()}</td>
                         <td className="px-6 py-4 font-medium text-emerald-600">${t.fare}</td>
                       </tr>
                     );
@@ -133,9 +142,24 @@ const Tickets = () => {
                 <select required value={formData.route_id} onChange={e => setFormData({...formData, route_id: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
                   <option value="">Select Route...</option>
                   {routes.map(r => (
-                    <option key={r.route_id} value={r.route_id}>{r.route_name} ({r.start_point} to {r.end_point})</option>
+                    <option key={r.route_id} value={r.route_id}>{r.route_name}</option>
                   ))}
                 </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Bus</label>
+                  <select required value={formData.bus_id} onChange={e => setFormData({...formData, bus_id: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
+                    <option value="">Select Bus...</option>
+                    {buses.map(b => (
+                      <option key={b.bus_id} value={b.bus_id}>Bus {b.bus_id}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Seat Number</label>
+                  <input type="number" required value={formData.seat_number} onChange={e => setFormData({...formData, seat_number: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
