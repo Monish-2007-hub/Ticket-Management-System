@@ -7,6 +7,7 @@ import Tickets from './pages/Tickets';
 import RoutesPage from './pages/Routes';
 import Buses from './pages/Buses';
 import BusPasses from './pages/BusPasses';
+import Register from './pages/Register';
 import { useState, useEffect } from 'react';
 import { authService } from './services/api';
 
@@ -30,6 +31,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route
         path="/"
         element={

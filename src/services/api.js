@@ -27,7 +27,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    // Only redirect to login if the error is 401 AND it's NOT the login request itself
+    if (error.response && error.response.status === 401 && !error.config.url.endsWith('/auth/login')) {
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
@@ -41,6 +42,10 @@ export const authService = {
     if (response.data.success) {
       localStorage.setItem('user', JSON.stringify(response.data.data));
     }
+    return response.data;
+  },
+  register: async (username, password, role = 'user') => {
+    const response = await api.post('/auth/register', { username, password, role });
     return response.data;
   },
   logout: () => {
