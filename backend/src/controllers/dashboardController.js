@@ -8,33 +8,23 @@ const getDashboardStats = async (req, res, next) => {
     const [routes] = await pool.execute('SELECT COUNT(*) as count FROM BUS_ROUTES');
     const [passes] = await pool.execute('SELECT COUNT(*) as count FROM BUS_PASS');
 
-    // 2. Weekly Sales Data (Last 7 days)
-    // We group by date to get daily counts
-    const [weeklySales] = await pool.execute(`
-      SELECT DATE_FORMAT(travel_date, '%a') as day, COUNT(*) as count 
-      FROM TICKETS 
-      WHERE travel_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) 
-      GROUP BY day, travel_date
-      ORDER BY travel_date ASC
-    `);
-
-    // 3. Recent Activity (Mix of last 5 tickets and last 5 passes)
+    // 2. Recent Activity (Mix of last 10 tickets and last 10 passes for a fuller feed)
     const [recentTickets] = await pool.execute(`
       SELECT 'ticket' as type, ticket_id as id, passenger_id, travel_date as date 
       FROM TICKETS 
-      ORDER BY ticket_id DESC LIMIT 5
+      ORDER BY ticket_id DESC LIMIT 10
     `);
     
     const [recentPasses] = await pool.execute(`
       SELECT 'pass' as type, pass_id as id, passenger_id, issue_date as date 
       FROM BUS_PASS 
-      ORDER BY pass_id DESC LIMIT 5
+      ORDER BY pass_id DESC LIMIT 10
     `);
 
     // Combine and sort by date descending
     const activities = [...recentTickets, ...recentPasses]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 5);
+      .slice(0, 10);
 
     res.json({
       success: true,
@@ -43,7 +33,6 @@ const getDashboardStats = async (req, res, next) => {
         totalTickets: tickets[0].count,
         totalRoutes: routes[0].count,
         totalPasses: passes[0].count,
-        weeklySales,
         activities
       }
     });
