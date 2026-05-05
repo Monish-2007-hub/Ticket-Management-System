@@ -10,11 +10,11 @@ const getAllPassengers = async (req, res, next) => {
 };
 
 const addPassenger = async (req, res, next) => {
-  const { first_name, last_name, date_of_birth, passenger_type } = req.body;
+  const { first_name, last_name, date_of_birth, passenger_type, user_id } = req.body;
   try {
     const [result] = await pool.execute(
-      'INSERT INTO PASSENGERS (first_name, last_name, date_of_birth, passenger_type) VALUES (?, ?, ?, ?)',
-      [first_name, last_name, date_of_birth, passenger_type]
+      'INSERT INTO PASSENGERS (first_name, last_name, date_of_birth, passenger_type, user_id) VALUES (?, ?, ?, ?, ?)',
+      [first_name, last_name, date_of_birth, passenger_type, user_id || null]
     );
     res.status(201).json({ success: true, data: { id: result.insertId, ...req.body } });
   } catch (err) {
@@ -24,11 +24,11 @@ const addPassenger = async (req, res, next) => {
 
 const updatePassenger = async (req, res, next) => {
   const { id } = req.params;
-  const { first_name, last_name, date_of_birth, passenger_type } = req.body;
+  const { first_name, last_name, date_of_birth, passenger_type, user_id } = req.body;
   try {
     await pool.execute(
-      'UPDATE PASSENGERS SET first_name = ?, last_name = ?, date_of_birth = ?, passenger_type = ? WHERE passenger_id = ?',
-      [first_name, last_name, date_of_birth, passenger_type, id]
+      'UPDATE PASSENGERS SET first_name = ?, last_name = ?, date_of_birth = ?, passenger_type = ?, user_id = ? WHERE passenger_id = ?',
+      [first_name, last_name, date_of_birth, passenger_type, user_id || null, id]
     );
     res.json({ success: true, message: 'Passenger updated successfully' });
   } catch (err) {

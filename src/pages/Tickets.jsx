@@ -13,11 +13,12 @@ const Tickets = () => {
   const [formData, setFormData] = useState({
     passenger_id: '',
     route_id: '',
-    bus_id: '',
-    seat_number: '',
     travel_date: '',
     fare: ''
   });
+
+  const user = JSON.parse(localStorage.getItem('user'));
+  const isAdmin = user?.role === 'admin';
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -50,7 +51,7 @@ const Tickets = () => {
       if (response.success) {
         toast.success('Ticket booked successfully');
         setShowModal(false);
-        setFormData({ passenger_id: '', route_id: '', bus_id: '', seat_number: '', travel_date: '', fare: '' });
+        setFormData({ passenger_id: '', route_id: '', travel_date: '', fare: '' });
         fetchData();
       } else {
         toast.error(response.message || 'Failed to book ticket');
@@ -64,13 +65,15 @@ const Tickets = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Tickets</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Book Ticket
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Book Ticket
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -145,21 +148,6 @@ const Tickets = () => {
                     <option key={r.route_id} value={r.route_id}>{r.route_name}</option>
                   ))}
                 </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Bus</label>
-                  <select required value={formData.bus_id} onChange={e => setFormData({...formData, bus_id: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-                    <option value="">Select Bus...</option>
-                    {buses.map(b => (
-                      <option key={b.bus_id} value={b.bus_id}>Bus {b.bus_id}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Seat Number</label>
-                  <input type="number" required value={formData.seat_number} onChange={e => setFormData({...formData, seat_number: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

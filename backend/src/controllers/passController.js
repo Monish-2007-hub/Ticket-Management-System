@@ -10,11 +10,11 @@ const getAllPasses = async (req, res, next) => {
 };
 
 const issuePass = async (req, res, next) => {
-  const { passenger_id, issue_date, expiry_date, pass_type } = req.body;
+  const { passenger_id, route_id, issue_date, expiry_date } = req.body;
   try {
     const [result] = await pool.execute(
-      'INSERT INTO BUS_PASS (passenger_id, issue_date, expiry_date, pass_type) VALUES (?, ?, ?, ?)',
-      [passenger_id, issue_date, expiry_date, pass_type]
+      'INSERT INTO BUS_PASS (passenger_id, route_id, issue_date, expiry_date) VALUES (?, ?, ?, ?)',
+      [passenger_id, route_id, issue_date, expiry_date]
     );
     res.status(201).json({ success: true, data: { pass_id: result.insertId, ...req.body } });
   } catch (err) {

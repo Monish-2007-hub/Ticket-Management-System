@@ -23,48 +23,20 @@ const getTicketById = async (req, res, next) => {
 };
 
 const bookTicket = async (req, res, next) => {
-  const { passenger_id, route_id, bus_id, seat_number, travel_date, fare } = req.body;
+  const { passenger_id, route_id, travel_date, fare } = req.body;
   
-  const connection = await pool.getConnection();
   try {
-    await connection.beginTransaction();
-
-    // 1. Check if seat is already booked
-    const [seatRows] = await connection.execute(
-      'SELECT status FROM BUS_SEAT WHERE bus_id = ? AND seat_number = ?',
-      [bus_id, seat_number]
-    );
-
-    if (seatRows.length === 0) {
-      throw new Error('Seat not found');
-    }
-
-    if (seatRows[0].status === 'booked') {
-      return res.status(400).json({ success: false, message: 'Seat is already booked' });
-    }
-
-    // 2. Insert into TICKETS
-    const [ticketResult] = await connection.execute(
+    const [result] = await pool.execute(
       'INSERT INTO TICKETS (passenger_id, route_id, travel_date, fare) VALUES (?, ?, ?, ?)',
       [passenger_id, route_id, travel_date, fare]
     );
 
-    // 3. Update BUS_SEAT status
-    await connection.execute(
-      'UPDATE BUS_SEAT SET status = "booked" WHERE bus_id = ? AND seat_number = ?',
-      [bus_id, seat_number]
-    );
-
-    await connection.commit();
     res.status(201).json({ 
       success: true, 
-      data: { ticket_id: ticketResult.insertId, ...req.body } 
+      data: { ticket_id: result.insertId, ...req.body } 
     });
   } catch (err) {
-    await connection.rollback();
     next(err);
-  } finally {
-    connection.release();
   }
 };
 

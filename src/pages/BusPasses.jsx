@@ -1,28 +1,35 @@
 import { useState, useEffect } from 'react';
-import { passService, passengerService } from '../services/api';
+import { passService, passengerService, routeService } from '../services/api';
 import { Plus, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const BusPasses = () => {
   const [passes, setPasses] = useState([]);
   const [passengers, setPassengers] = useState([]);
+  const [routes, setRoutes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     passenger_id: '',
+    route_id: '',
     issue_date: new Date().toISOString().split('T')[0],
     expiry_date: ''
   });
 
+  const user = JSON.parse(localStorage.getItem('user'));
+  const isAdmin = user?.role === 'admin';
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [passRes, passengRes] = await Promise.all([
+      const [passRes, passengRes, routeRes] = await Promise.all([
         passService.getAll(),
-        passengerService.getAll()
+        passengerService.getAll(),
+        routeService.getAll()
       ]);
-      setPasses(passRes.data);
-      setPassengers(passengRes.data);
+      setPasses(passRes.data || []);
+      setPassengers(passengRes.data || []);
+      setRoutes(routeRes.data || []);
     } catch (error) {
       toast.error('Failed to load data');
     } finally {
@@ -79,13 +86,15 @@ const BusPasses = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Bus Passes</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Issue Pass
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Issue Pass
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -151,6 +160,15 @@ const BusPasses = () => {
                   <option value="">Select Passenger...</option>
                   {passengers.map(p => (
                     <option key={p.passenger_id} value={p.passenger_id}>{p.first_name} {p.last_name} ({p.passenger_id})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Route</label>
+                <select required value={formData.route_id} onChange={e => setFormData({...formData, route_id: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
+                  <option value="">Select Route...</option>
+                  {routes.map(r => (
+                    <option key={r.route_id} value={r.route_id}>{r.route_name}</option>
                   ))}
                 </select>
               </div>

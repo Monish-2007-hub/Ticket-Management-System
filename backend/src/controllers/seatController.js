@@ -10,17 +10,17 @@ const getSeatsByBusId = async (req, res, next) => {
   }
 };
 
-const bookSeat = async (req, res, next) => {
-  const { bus_id, seat_number } = req.body;
+const addSeat = async (req, res, next) => {
+  const { bus_id, seat_number, seat_type } = req.body;
   try {
     await pool.execute(
-      'UPDATE BUS_SEAT SET status = "booked" WHERE bus_id = ? AND seat_number = ?',
-      [bus_id, seat_number]
+      'INSERT INTO BUS_SEAT (bus_id, seat_number, seat_type) VALUES (?, ?, ?)',
+      [bus_id, seat_number, seat_type]
     );
-    res.json({ success: true, message: 'Seat marked as booked' });
+    res.status(201).json({ success: true, message: 'Seat added successfully' });
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = { getSeatsByBusId, bookSeat };
+module.exports = { getSeatsByBusId, addSeat };

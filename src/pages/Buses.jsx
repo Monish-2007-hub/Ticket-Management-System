@@ -10,12 +10,12 @@ const Buses = () => {
   const [selectedBus, setSelectedBus] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
-    bus_number: '',
-    bus_type_id: '1',
-    route_id: '',
-    capacity: 40,
-    status: 'Active'
+    bus_type_id: '',
+    route_id: ''
   });
+
+  const user = JSON.parse(localStorage.getItem('user'));
+  const isAdmin = user?.role === 'admin';
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -43,7 +43,7 @@ const Buses = () => {
       await busService.add(formData);
       toast.success('Bus added to fleet');
       setShowModal(false);
-      setFormData({ bus_number: '', bus_type_id: '1', route_id: '', capacity: 40, status: 'Active' });
+      setFormData({ bus_type_id: '', route_id: '' });
       fetchData();
     } catch (error) {
       toast.error('Failed to add bus');
@@ -84,13 +84,15 @@ const Buses = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Bus Fleet & Seating</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Add Bus
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Add Bus
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -171,8 +173,8 @@ const Buses = () => {
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Bus Number</label>
-                <input type="text" required value={formData.bus_number} onChange={e => setFormData({...formData, bus_number: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Bus Type ID</label>
+                <input type="number" required value={formData.bus_type_id} onChange={e => setFormData({...formData, bus_type_id: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Route</label>
@@ -182,20 +184,6 @@ const Buses = () => {
                     <option key={r.route_id} value={r.route_id}>{r.route_name}</option>
                   ))}
                 </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Capacity</label>
-                  <input type="number" required value={formData.capacity} onChange={e => setFormData({...formData, capacity: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Maintenance">Maintenance</option>
-                  </select>
-                </div>
               </div>
               <div className="pt-4 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors">Cancel</button>
