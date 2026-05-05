@@ -143,3 +143,10 @@ export const passService = {
     return response.data;
   }
 };
+
+export const busTypeService = {
+  getAll: async () => {
+    const response = await api.get('/bus-types');
+    return response.data;
+  }
+};

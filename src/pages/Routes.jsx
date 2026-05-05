@@ -13,11 +13,14 @@ const RoutesPage = () => {
     end_point: ''
   });
 
+  const user = JSON.parse(localStorage.getItem('user'));
+  const isAdmin = user?.role === 'admin';
+
   const fetchRoutes = async () => {
     setIsLoading(true);
     try {
       const res = await routeService.getAll();
-      setRoutes(res.data);
+      setRoutes(res.data || []);
     } catch (error) {
       toast.error('Failed to load routes');
     } finally {
@@ -46,13 +49,15 @@ const RoutesPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Routes</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Add Route
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Add Route
+          </button>
+        )}
       </div>
 
       {isLoading ? (

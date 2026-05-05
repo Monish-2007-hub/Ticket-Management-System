@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { busService, routeService } from '../services/api';
+import { busService, routeService, busTypeService } from '../services/api';
 import { Bus, Users, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Buses = () => {
   const [buses, setBuses] = useState([]);
   const [routes, setRoutes] = useState([]);
+  const [busTypes, setBusTypes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedBus, setSelectedBus] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -20,12 +21,14 @@ const Buses = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [busRes, routeRes] = await Promise.all([
+      const [busRes, routeRes, typeRes] = await Promise.all([
         busService.getAll(),
-        routeService.getAll()
+        routeService.getAll(),
+        busTypeService.getAll()
       ]);
       setBuses(busRes.data || []);
       setRoutes(routeRes.data || []);
+      setBusTypes(typeRes.data || []);
     } catch (error) {
       toast.error('Failed to load fleet data');
     } finally {
@@ -173,8 +176,13 @@ const Buses = () => {
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Bus Type ID</label>
-                <input type="number" required value={formData.bus_type_id} onChange={e => setFormData({...formData, bus_type_id: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Bus Type</label>
+                <select required value={formData.bus_type_id} onChange={e => setFormData({...formData, bus_type_id: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
+                  <option value="">Select Type...</option>
+                  {busTypes.map(t => (
+                    <option key={t.bus_type_id} value={t.bus_type_id}>{t.type_name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Route</label>
